@@ -133,6 +133,8 @@ class Document {
         table.addCell(Cell().add(Paragraph("TOTAL")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
         table.addCell(Cell().add(Paragraph("${cgstAmountRounded + igstAmountRounded + subTotal}")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f)
             .setBackgroundColor(ColorConstants.LIGHT_GRAY))
+
+
     }
 
     fun writeToPdf(){
