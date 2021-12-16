@@ -4,6 +4,8 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import java.sql.Connection
+import java.text.SimpleDateFormat
+import java.util.*
 
 open class Data {
     object StockTable: Table(){
@@ -14,12 +16,21 @@ open class Data {
 
         override val primaryKey = PrimaryKey(id, name="PK_User_ID")
     }
+
+    object InvoiceTable: Table(){
+        val id: Column<Int> = integer("id").autoIncrement()
+        val invoiceName: Column<String> = varchar("heading", 244)
+
+        override val primaryKey = PrimaryKey(id, name="PK_Invoice_ID")
+    }
+
     init{
         Database.connect("jdbc:sqlite:F:\\IDEs\\Kotlin\\Stock-Management\\src\\data\\data.db", "org.sqlite.JDBC")
         TransactionManager.manager.defaultIsolationLevel =
             Connection.TRANSACTION_SERIALIZABLE
         transaction {
             SchemaUtils.create(StockTable)
+            SchemaUtils.create(InvoiceTable)
         }
     }
 
@@ -156,5 +167,57 @@ open class Data {
             groupItem.add(total.toString())
         }
         return groupItem
+    }
+
+    open fun addInvoiceToTable(billToName: String): MutableList<String>{
+        val returnList: MutableList<String> = mutableListOf()
+        var createFile: Boolean = true
+        val sdf = SimpleDateFormat("dd/M/yyyy HH:mm:ss")
+        val currentDate = sdf.format(Date()).toString()
+        val name: String = "$currentDate $billToName"
+        val replacedName: String = name.replace("""/""", ".").replace(":", ",")
+        var counter = 0
+
+        transaction{
+            val rows = InvoiceTable.select{InvoiceTable.id greater 0}.count()
+            if (rows == 0L){
+                InvoiceTable.insert{
+                    it[invoiceName] = replacedName
+                    createFile = true
+                }
+            }
+            else{
+                InvoiceTable.select{
+                    InvoiceTable.invoiceName eq replacedName
+                }.forEach{ it ->
+                    counter++
+                    if (it[InvoiceTable.invoiceName] == replacedName){
+                        println("The invoice already exists")
+                        println("Are you sure you want to overwrite it?: ")
+                        print("Press 1 to confirm\nPress 2 to discard: ")
+                        val userDecision: String = readLine().toString()
+                        transaction {
+                            if (userDecision == "1") {
+                                InvoiceTable.update({ InvoiceTable.invoiceName eq replacedName }) {
+                                    it[invoiceName] = replacedName
+                                    createFile = true
+                                }
+                            } else {
+                                createFile = false
+                            }
+                        }
+                    }
+                }
+            }
+            if (counter == 0){
+                InvoiceTable.insert{
+                    it[invoiceName] = replacedName
+                    createFile = true
+                }
+            }
+        }
+        returnList.add(replacedName)
+        returnList.add(createFile.toString())
+        return returnList
     }
 }
