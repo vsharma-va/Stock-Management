@@ -5,4 +5,3 @@ fun main(args: Array<String>){
 
     userClass.whatToDo()
 }
-
