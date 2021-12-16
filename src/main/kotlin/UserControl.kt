@@ -29,19 +29,24 @@ class UserControl(private val data: Data, private val document: Document){
             }
             else if(userChoice == 4){
                 var billItem: MutableList<MutableList<String>> = collectBillData()
-                val templateData: MutableList<String> = getDataForDocumentTemplate()
-                document.generateTemplate(templateData[0], templateData[1], templateData[2], templateData[3].toInt(),
-                templateData[4], templateData[5], templateData[6], templateData[7], templateData[8], templateData[9],
-                templateData[10], templateData[11])
+                if (billItem.isNotEmpty()){
+                    val templateData: MutableList<String> = getDataForDocumentTemplate()
+                    document.generateTemplate(templateData[0], templateData[1], templateData[2], templateData[3].toInt(),
+                        templateData[4], templateData[5], templateData[6], templateData[7], templateData[8], templateData[9],
+                        templateData[10], templateData[11])
 
-                print("Enter CGST %: ")
-                val cgstPercentage: Float = readLine()!!.toFloat()
+                    print("Enter CGST %: ")
+                    val cgstPercentage: Float = readLine()!!.toFloat()
 
-                print("Enter IGST %: ")
-                val igstPercentage: Float = readLine()!!.toFloat()
+                    print("Enter IGST %: ")
+                    val igstPercentage: Float = readLine()!!.toFloat()
 
-                document.generateTable(billItem, cgstPercentage, igstPercentage)
-                document.writeToPdf()
+                    document.generateTable(billItem, cgstPercentage, igstPercentage)
+                    document.writeToPdf()
+                }
+                else{
+                    println("Exiting")
+                }
             }
         }
     }
@@ -96,20 +101,39 @@ class UserControl(private val data: Data, private val document: Document){
     }
 
     private fun collectBillData(): MutableList<MutableList<String>>{
-        var returnArray: MutableList<MutableList<String>> = mutableListOf()
+        var billItems: MutableList<MutableList<String>> = mutableListOf()
+        var groupedItems: MutableList<String>
+        var dataForBillItems: MutableList<String>
+        var packedForBillItems: MutableList<MutableList<String>> = mutableListOf()
+        var userInput: String
+        var cont: Boolean = true
         do {
-            var map: MutableMap<String, Int>
-            var groupedItems: MutableList<String> = mutableListOf()
-            println("Enter -1 to exit anytime")
-            print("Enter the name or the index of the stock: ")
-            val userInput: String = readLine().toString()
+            do{
+                var map: MutableMap<String, Int>
 
-            if (userInput == "-1"){
+                println("Enter -1 to exit anytime")
+                print("Enter the name or the index of the stock: ")
+                userInput = readLine().toString()
+
+                if (userInput == "-1"){
+                    cont = false
+                    break
+                }
+
+                map = data.retrieveStockAmount(name=userInput)
+                println("Found: $map")
+
+                if (map.isNotEmpty()){
+                    break
+                }
+                else{
+                    println("No record found try again")
+                }
+            } while(true)
+
+            if (!cont){
                 break
             }
-
-            map = data.retrieveStockAmount(name=userInput)
-            println("Found: $map")
 
             print("Enter the Quantity: ")
             val userInputAmount: Int = Integer.valueOf(readLine())
@@ -118,11 +142,30 @@ class UserControl(private val data: Data, private val document: Document){
                 break
             }
 
-            groupedItems = data.selectItemsForBill(userInputAmount, name=userInput)
-            returnArray.add(groupedItems)
+            groupedItems = mutableListOf(userInputAmount.toString(), userInput)
+            billItems.add(groupedItems)
+
         } while(true)
 
-        return returnArray
+        println("\n")
+        println("\n")
+        println("Selected Items: ")
+        for (i in billItems){
+            println("Name- ${i[0]}, amount- ${i[1]}")
+        }
+
+        println("\n")
+        println("Are you sure you want to proceed ? Changes will be made to the database and will have to be reverted manually")
+        print("1 for continue\n2 to discard: ")
+        val userDecision: String = readLine().toString()
+
+        if (userDecision == "1"){
+            for (i in 0..billItems.size){
+                dataForBillItems = data.selectItemsForBill(billItems[i][0].toInt(), billItems[i][1])
+                packedForBillItems.add(dataForBillItems)
+            }
+        }
+        return packedForBillItems
     }
 
     private fun getDataForDocumentTemplate(): MutableList<String>{
