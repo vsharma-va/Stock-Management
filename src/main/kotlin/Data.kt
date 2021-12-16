@@ -24,9 +24,23 @@ open class Data {
 
     open fun addRecords(name: String, amount: Int){
         transaction {
-            StockTable.insert{
-                it[stockName] = name
-                it[stockAmount] = amount
+            val map: MutableMap<String, Int> = retrieveStockAmount(name)
+            if (map.isEmpty()) {
+                StockTable.insert {
+                    it[stockName] = name
+                    it[stockAmount] = amount
+                }
+            }
+            else{
+                StockTable.update({StockTable.stockName eq name}){
+                    val antAmount: Int? = map[name]
+                    var intAntAmount: Int = 0
+                    if(antAmount != null){
+                        intAntAmount = antAmount
+                    }
+                    val newAmount: Int = intAntAmount + amount
+                    it[stockAmount] = newAmount
+                }
             }
         }
     }
