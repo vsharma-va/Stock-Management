@@ -1,6 +1,7 @@
 fun main(args: Array<String>){
     val dataClass: Data = Data()
-    val userClass: UserControl = UserControl(dataClass)
+    val document: Document = Document()
+    val userClass: UserControl = UserControl(dataClass, document)
 
     userClass.whatToDo()
 }

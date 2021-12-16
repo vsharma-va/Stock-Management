@@ -50,9 +50,9 @@ fun main(args: Array<String>){
         println(i[0])
     }
 
-    val k = Document()
-    k.generateTemplate("MHello Corp", "What", "23/12/2021", 1, "123-456-789", "123", "456",
-        "24/12/2021", "Vaibhav", "Sharmas", "where", "123-432-543")
-    k.generateTable(arrayOf(arrayOf("oil", "20", "200", "4000"), arrayOf("Wood", "30", "100", "3000")), 8f, 7f)
-    k.writeToPdf()
+//    val k = Document()
+//    k.generateTemplate("MHello Corp", "What", "23/12/2021", 1, "123-456-789", "123", "456",
+//        "24/12/2021", "Vaibhav", "Sharmas", "where", "123-432-543")
+//    k.generateTable(arrayOf(arrayOf("oil", "20", "200", "4000"), arrayOf("Wood", "30", "100", "3000")), 8f, 7f)
+//    k.writeToPdf()
 }
