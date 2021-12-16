@@ -31,21 +31,25 @@ class UserControl(private val data: Data, private val document: Document){
                 var billItem: MutableList<MutableList<String>> = collectBillData()
                 if (billItem.isNotEmpty()){
                     val templateData: MutableList<String> = getDataForDocumentTemplate()
-                    document.generateTemplate(templateData[0], templateData[1], templateData[2], templateData[3].toInt(),
+                    val bool: Boolean = document.generateTemplate(templateData[0], templateData[1], templateData[2], templateData[3].toInt(),
                         templateData[4], templateData[5], templateData[6], templateData[7], templateData[8], templateData[9],
                         templateData[10], templateData[11])
+                    if (bool){
+                        print("Enter CGST %: ")
+                        val cgstPercentage: Float = readLine()!!.toFloat()
 
-                    print("Enter CGST %: ")
-                    val cgstPercentage: Float = readLine()!!.toFloat()
+                        print("Enter IGST %: ")
+                        val igstPercentage: Float = readLine()!!.toFloat()
 
-                    print("Enter IGST %: ")
-                    val igstPercentage: Float = readLine()!!.toFloat()
-
-                    document.generateTable(billItem, cgstPercentage, igstPercentage)
-                    document.writeToPdf()
+                        document.generateTable(billItem, cgstPercentage, igstPercentage)
+                        document.writeToPdf()
+                    }
+                    else{
+                        println("Exiting..")
+                    }
                 }
                 else{
-                    println("Exiting")
+                    println("Exiting..")
                 }
             }
         }
@@ -151,7 +155,7 @@ class UserControl(private val data: Data, private val document: Document){
         println("\n")
         println("Selected Items: ")
         for (i in billItems){
-            println("Name- ${i[0]}, amount- ${i[1]}")
+            println("Name- ${i[1]}, amount- ${i[0]}")
         }
 
         println("\n")
@@ -160,8 +164,8 @@ class UserControl(private val data: Data, private val document: Document){
         val userDecision: String = readLine().toString()
 
         if (userDecision == "1"){
-            for (i in 0..billItems.size){
-                dataForBillItems = data.selectItemsForBill(billItems[i][0].toInt(), billItems[i][1])
+            for (i in billItems){
+                dataForBillItems = data.selectItemsForBill(i[0].toInt(), i[1])
                 packedForBillItems.add(dataForBillItems)
             }
         }
