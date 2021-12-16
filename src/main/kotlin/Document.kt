@@ -73,8 +73,8 @@ class Document {
         phnNum.setMargins(0f, 0f, 15f, 4f)
     }
 
-    fun generateTable(billList: Array<Array<String>>, cgst: Float, igst: Float){
-        var subTotal: Int = 0
+    fun generateTable(billList: MutableList<MutableList<String>>, cgst: Float, igst: Float){
+        var subTotal: Double = 0.0
         table = Table(UnitValue.createPercentArray(floatArrayOf(100f, 30f, 30f, 35f))).useAllAvailableWidth()
         table.addHeaderCell(Cell().add(Paragraph("DESCRIPTION").setTextAlignment(TextAlignment.CENTER).setFontSize(10f)
             .setBackgroundColor(ColorConstants.LIGHT_GRAY)))
@@ -91,7 +91,7 @@ class Document {
             table.addCell(Cell().add(Paragraph(item[2])).setTextAlignment(TextAlignment.CENTER).setFontSize(7f))
             table.addCell(Cell().add(Paragraph(item[3])).setTextAlignment(TextAlignment.CENTER).setFontSize(7f))
 
-            subTotal += item[3].toInt()
+            subTotal += item[3].toDouble()
         }
 
         table.addCell(Cell().add(Paragraph(" ")).setBorder(Border.NO_BORDER))
@@ -109,13 +109,15 @@ class Document {
         table.addCell(Cell().add(Paragraph("IGST")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
         table.addCell(Cell().add(Paragraph("$igst %")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
 
-        val cgstAmount: Float = subTotal * (cgst/100)
-        val igstAmount: Float = subTotal * (igst/100)
+        val cgstAmount: Double = subTotal * (cgst/100)
+        val cgstAmountRounded: Double = String.format("%.3f", cgstAmount).toDouble()
+        val igstAmount: Double = subTotal * (igst/100)
+        val igstAmountRounded: Double = String.format("%.3f", igstAmount).toDouble()
 
         table.addCell(Cell().add(Paragraph(" ")).setBorder(Border.NO_BORDER))
         table.addCell(Cell().add(Paragraph(" ")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
         table.addCell(Cell().add(Paragraph("Tax Due")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
-        table.addCell(Cell().add(Paragraph("${cgstAmount + igstAmount}")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
+        table.addCell(Cell().add(Paragraph("${cgstAmountRounded + igstAmountRounded}")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
 
         table.addCell(Cell().add(Paragraph(" ")).setBorder(Border.NO_BORDER))
         table.addCell(Cell().add(Paragraph(" ")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
@@ -129,7 +131,7 @@ class Document {
         table.addCell(Cell().add(Paragraph(" ")).setBorder(Border.NO_BORDER))
         table.addCell(Cell().add(Paragraph(" ")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
         table.addCell(Cell().add(Paragraph("TOTAL")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f))
-        table.addCell(Cell().add(Paragraph("${cgstAmount + igstAmount + subTotal}")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f)
+        table.addCell(Cell().add(Paragraph("${cgstAmountRounded + igstAmountRounded + subTotal}")).setTextAlignment(TextAlignment.CENTER).setBorder(Border.NO_BORDER).setFontSize(7f)
             .setBackgroundColor(ColorConstants.LIGHT_GRAY))
     }
 
