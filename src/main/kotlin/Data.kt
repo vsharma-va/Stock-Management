@@ -10,6 +10,7 @@ open class Data {
         val id: Column<Int> = integer("id").autoIncrement()
         val stockName: Column<String> = varchar("stockName", 244)
         val stockAmount: Column<Int> = integer("stockAmount")
+        val stockPrice: Column<Double> = double("stockPrice")
 
         override val primaryKey = PrimaryKey(id, name="PK_User_ID")
     }
@@ -22,13 +23,14 @@ open class Data {
         }
     }
 
-    open fun addRecords(name: String, amount: Int){
+    open fun addRecords(name: String, amount: Int, price: Double){
         transaction {
             val map: MutableMap<String, Int> = retrieveStockAmount(name)
             if (map.isEmpty()) {
                 StockTable.insert {
                     it[stockName] = name
                     it[stockAmount] = amount
+                    it[stockPrice] = price
                 }
             }
             else{
@@ -40,6 +42,7 @@ open class Data {
                     }
                     val newAmount: Int = intAntAmount + amount
                     it[stockAmount] = newAmount
+                    it[stockPrice] = price
                 }
             }
         }
@@ -83,6 +86,28 @@ open class Data {
         return returnedStockName
     }
 
+    private fun retrieveStockPrice(name: String="", index: Int=0): Double{
+        var price: Double = 0.0
+        transaction {
+            if(name.isNotEmpty()) {
+                StockTable.select {
+                    StockTable.stockName eq name
+                }.forEach{
+                    price = it[StockTable.stockPrice]
+                }
+            }
+
+            else if(index != 0){
+                StockTable.select{
+                    StockTable.id eq index
+                }.forEach{
+                    price = it[StockTable.stockPrice]
+                }
+            }
+        }
+        return price
+    }
+
     open fun getStatus(): Boolean{
         var empty: Boolean = false
         transaction {
@@ -93,5 +118,43 @@ open class Data {
             }
         }
         return empty
+    }
+
+    open fun selectItemsForBill(amount: Int, name: String): MutableList<String>{
+        var found: Boolean = true
+        val map: MutableMap<String, Int> = retrieveStockAmount(name)
+        var groupItem: MutableList<String> = mutableListOf()
+
+        if (map.isEmpty()){
+            println("Stock doesn't exist")
+            found = false
+        }
+
+        if (found){
+            transaction {
+                StockTable.update({StockTable.stockName eq name}){
+                    val antAmount: Int? = map[name]
+                    var intAntAmount: Int = 0
+                    if(antAmount != null){
+                        intAntAmount = antAmount
+                    }
+                    if(amount > intAntAmount){
+                        println("Not enough stock")
+                    }
+                    else{
+                        val newAmount: Int = intAntAmount - amount
+                        it[stockAmount] = newAmount
+                    }
+                }
+            }
+
+            val price: Double = retrieveStockPrice(name)
+            val total: Double = price * amount
+            groupItem.add(name)
+            groupItem.add(amount.toString())
+            groupItem.add(price.toString())
+            groupItem.add(total.toString())
+        }
+        return groupItem
     }
 }
