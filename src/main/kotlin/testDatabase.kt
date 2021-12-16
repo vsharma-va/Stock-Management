@@ -28,12 +28,13 @@ fun main(args: Array<String>){
 //            it[stockAmount] = 25
 //        }
 //    }
+    var counter = 0
     transaction {
-        val query: Query = StockTable.select { StockTable.stockName eq "Oil" }
-        println(query)
-        val rows = StockTable.select{StockTable.id greater 0}.count()
-        print(rows)
+        StockTable.select { StockTable.stockName eq "what" }.forEach{
+            counter ++
+        }
     }
+    println(counter)
 
 //    var returnedStockName: String = ""
 //    var map: MutableMap<String, Int> = mutableMapOf()
