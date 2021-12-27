@@ -23,7 +23,6 @@ class Document(private val data: Data) {
 
     private lateinit var table: Table
 
-
     private lateinit var pdf: PdfDocument
     private lateinit var document: Document
 

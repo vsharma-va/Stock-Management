@@ -1,3 +1,5 @@
+import org.jetbrains.exposed.sql.Query
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.NumberFormatException
@@ -111,6 +113,21 @@ class UserControl(private val data: Data, private val document: Document){
         var packedForBillItems: MutableList<MutableList<String>> = mutableListOf()
         var userInput: String
         var cont: Boolean = true
+        val allItems: Query = data.retrieveAllRecords()
+        transaction{
+            println()
+            allItems.forEach {
+                var printLine: String = ""
+                val x: String = it.toString()
+                val splitList: List<String> = x.split(",")
+                for (i in splitList){
+                    val segment: String = i.split("=")[1]
+                    printLine += " $segment"
+                }
+                println(printLine)
+            }
+        }
+        println()
         do {
             do{
                 var map: MutableMap<String, Int>

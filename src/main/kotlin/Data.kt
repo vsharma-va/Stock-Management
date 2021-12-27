@@ -220,4 +220,12 @@ open class Data {
         returnList.add(createFile.toString())
         return returnList
     }
+
+    fun retrieveAllRecords(): Query {
+        lateinit var allItems: Query
+        transaction {
+            allItems = StockTable.selectAll()
+        }
+        return allItems
+    }
 }
