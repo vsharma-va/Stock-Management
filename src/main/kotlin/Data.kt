@@ -24,6 +24,9 @@ import java.util.*
 // create a function which will search the table by buyers name.
 // retrieve and send the data to Document class
 
+//FIXME -
+// If you select two of the same product bu in different turns they will be duplicated on the bill instead of being added (DONE)
+
 
 open class Data {
     object StockTable: Table(){
