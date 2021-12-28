@@ -187,8 +187,13 @@ class UserControl(private val data: Data, private val document: Document){
             }
 
             groupedItems = mutableListOf(userInputAmount.toString(), userInput)
-            billItems.add(groupedItems)
-
+            if (groupedItems in billItems){
+                val inx: Int = billItems.indexOf(groupedItems)
+                billItems[inx][0] = (billItems[inx][0].toInt() + userInputAmount).toString()
+            }
+            else{
+                billItems.add(groupedItems)
+            }
         } while(true)
 
         println("\n")
