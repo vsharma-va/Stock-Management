@@ -33,9 +33,13 @@ class UserControl(private val data: Data, private val document: Document){
                 var billItem: MutableList<MutableList<String>> = collectBillData()
                 if (billItem.isNotEmpty()){
                     val templateData: MutableList<String> = getDataForDocumentTemplate()
+                    println("Enter the full name of the buyer")
+                    val buyersFullName: String = readLine().toString()
+                    val fileName: String = data.addInvoiceToTable(buyersFullName, billItem, templateData[0], templateData[1], templateData[4],
+                     templateData[6], templateData[7], templateData[8], templateData[9], templateData[10], templateData[11])
                     val bool: Boolean = document.generateTemplate(templateData[0], templateData[1], templateData[2], templateData[3].toInt(),
                         templateData[4], templateData[5], templateData[6], templateData[7], templateData[8], templateData[9],
-                        templateData[10], templateData[11])
+                        templateData[10], templateData[11], fileName)
                     if (bool){
                         print("Enter CGST %: ")
                         val cgstPercentage: Float = readLine()!!.toFloat()
@@ -47,17 +51,18 @@ class UserControl(private val data: Data, private val document: Document){
                         document.writeToPdf()
                     }
                     else{
-                        println("Exiting..")
+                        println("Exiting.. (Error in generating template for the pdf)")
                     }
                 }
                 else{
-                    println("Exiting..")
+                    println("Exiting.. (The bill item list[list] is empty)")
                 }
             }
         }
     }
 
     private fun addRecords(){
+        var correct: Boolean = true
         var userInputPrice:Double?
         do{
             println("Enter -1 to exit")
@@ -66,10 +71,21 @@ class UserControl(private val data: Data, private val document: Document){
             if (userInputName == "-1") {
                 break
             }
-            print("Enter Amount Of The Stock: ")
-            var userInputAmount: Int = Integer.valueOf(readLine())
-            if (userInputAmount == -1) {
+            if (userInputName.isEmpty()){
+                println("Name cannot be left empty")
+                correct = false
                 break
+            }
+            print("Enter Amount Of The Stock: ")
+            var userInputAmount: Int = 0
+            try {
+                userInputAmount = Integer.valueOf(readLine())
+                if (userInputAmount == -1) {
+                    break
+                }
+            }catch(e: NumberFormatException){
+                println("Please enter an integer")
+                correct = false
             }
 
             do {
@@ -79,8 +95,15 @@ class UserControl(private val data: Data, private val document: Document){
             }
             while (userInputPrice == null)
 
-            val userInputPriceDouble: Double = userInputPrice.toDouble()
-            data.addRecords(userInputName, userInputAmount, userInputPriceDouble)
+            if(correct){
+                val userInputPriceDouble: Double = userInputPrice.toDouble()
+                data.addRecords(userInputName, userInputAmount, userInputPriceDouble)
+            }
+            else{
+                println("Exiting.. (Incorrect input given in either the name or the amount)")
+                break
+            }
+
         }while(true)
     }
 
