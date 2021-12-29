@@ -15,6 +15,7 @@ class UserControl(private val data: Data, private val document: Document){
             println("Press 2 to retrieve stock name w.r.t stock name or index number")
             println("Press 3 to retrieve stock amount w.r.t to index number")
             println("Press 4 to create a bill")
+            println("Press 5 to recover a deleted bill")
             val userChoice: Int = Integer.valueOf(readLine())
             if (userChoice == 1){
                 addRecords()
@@ -36,18 +37,13 @@ class UserControl(private val data: Data, private val document: Document){
                     println("Enter the full name of the buyer")
                     val buyersFullName: String = readLine().toString()
                     val fileName: String = data.addInvoiceToTable(buyersFullName, billItem, templateData[0], templateData[1], templateData[4],
-                     templateData[6], templateData[7], templateData[8], templateData[9], templateData[10], templateData[11])
+                     templateData[6], templateData[7], templateData[8], templateData[9], templateData[10], templateData[11],
+                     templateData[12], templateData[13])
                     val bool: Boolean = document.generateTemplate(templateData[0], templateData[1], templateData[2], templateData[3].toInt(),
                         templateData[4], templateData[5], templateData[6], templateData[7], templateData[8], templateData[9],
                         templateData[10], templateData[11], fileName)
                     if (bool){
-                        print("Enter CGST %: ")
-                        val cgstPercentage: Float = readLine()!!.toFloat()
-
-                        print("Enter IGST %: ")
-                        val igstPercentage: Float = readLine()!!.toFloat()
-
-                        document.generateTable(billItem, cgstPercentage, igstPercentage)
+                        document.generateTable(billItem, templateData[12].toFloat(), templateData[13].toFloat())
                         document.writeToPdf()
                     }
                     else{
@@ -57,6 +53,9 @@ class UserControl(private val data: Data, private val document: Document){
                 else{
                     println("Exiting.. (The bill item list[list] is empty)")
                 }
+            }
+            else if(userChoice == 5){
+                recoverBill()
             }
         }
     }
@@ -257,6 +256,12 @@ class UserControl(private val data: Data, private val document: Document){
         print("Enter buyers/ company's phone number: ")
         val compPhnNum: String = readLine().toString()
 
+        print("Enter CGST %: ")
+        val cgstPercentage: String = readLine().toString()
+
+        print("Enter IGST %: ")
+        val igstPercentage: String = readLine().toString()
+
         returnArray.add(compName)
         returnArray.add(addLine1)
         returnArray.add(currentDate)
@@ -269,7 +274,75 @@ class UserControl(private val data: Data, private val document: Document){
         returnArray.add(companyName)
         returnArray.add(companyAdd)
         returnArray.add(compPhnNum)
+        returnArray.add(cgstPercentage)
+        returnArray.add(igstPercentage)
 
         return returnArray
+    }
+
+    private fun recoverBill(){
+        var matchedResults: MutableList<MutableList<String>> = mutableListOf()
+        var nextStep: Boolean = false
+        do{
+            println("Enter the full name of the customer: ")
+            val userInputName: String = readLine().toString()
+            if (userInputName == "-1"){
+                nextStep = false
+                break
+            }
+            else{
+                matchedResults = data.searchInvoiceTable(userInputName)
+            }
+
+            if (matchedResults.isNotEmpty()){
+                var printString: String = ""
+                for ((indexCounter, i) in matchedResults.withIndex()){
+                    for(z in i){
+                        printString += "$z "
+                    }
+                    println(printString)
+                    printString = ""
+                }
+                nextStep = true
+                break
+            }
+            else {
+                nextStep = false
+                println("No Invoices Found Try Again or Enter -1 to exit")
+            }
+        }while(true)
+
+        if (nextStep){
+            val dataMap: MutableMap<String, String>
+            println("Enter the index number of the invoice you want to recover: ")
+            val userInputIndex: String = readLine().toString()
+            try{
+                dataMap = data.retrieveInvoiceData(userInputIndex.toInt())
+                document.generateTemplate(dataMap["yourCompanyName"].toString(), dataMap["addLine1"].toString(),
+                dataMap["date"].toString(), dataMap["invoiceNumber"].toString().toInt(), dataMap["phnNumber"].toString(),
+                dataMap["custId"].toString(), dataMap["faxNum"].toString(), dataMap["dueDate"].toString(),
+                dataMap["billToName"].toString(), dataMap["companyName"].toString(), dataMap["compAdd"].toString(),
+                dataMap["compPhnNum"].toString(), dataMap["invoiceName"].toString())
+
+                val temp: String = dataMap["tableContent"].toString()
+                var start: Int = 0
+                val answer: MutableList<MutableList<String>> = mutableListOf()
+                val trying: MutableList<String> = temp.replace("[", "")
+                .replace("]", "").replace(" ", "").split(",") as MutableList<String>
+                for ((index, i) in trying.withIndex()){
+                    if ((index == 0) or (index % 4 == 0)){
+                        start = index
+                    }
+                    if ((index + 1) % 4 == 0){
+                        answer.add(trying.subList(start, index+1))
+                    }
+                }
+                document.generateTable(answer, dataMap["cgstPercentage"]!!.toFloat(), dataMap["igstPercentage"]!!.toFloat())
+                document.writeToPdf()
+            }catch(e: NumberFormatException){
+                println("Please enter an integer only")
+                println("Exiting..")
+            }
+        }
     }
 }

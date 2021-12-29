@@ -7,7 +7,6 @@ import com.itextpdf.layout.element.*
 import com.itextpdf.layout.property.TabAlignment
 import com.itextpdf.layout.property.TextAlignment
 import com.itextpdf.layout.property.UnitValue
-import javax.print.Doc
 
 class Document(private val data: Data) {
     private lateinit var companyNameAndInvoice: Paragraph

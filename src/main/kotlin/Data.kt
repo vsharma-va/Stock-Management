@@ -1,10 +1,7 @@
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.transactions.TransactionManager
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.sql.Connection
 import java.text.SimpleDateFormat
 import java.util.*
@@ -56,6 +53,8 @@ open class Data {
         val compAdd: Column<String> = text("compAdd")
         val compPhnNum: Column<String> = text("compPhnNum")
         val custExists: Column<String> = text("custExists")
+        val cgstPercentage: Column<String> = text("cgstPercentage")
+        val igstPercentage: Column<String> = text("igstPercentage")
 
         override val primaryKey = PrimaryKey(id, name="PK_Invoice_ID")
     }
@@ -208,7 +207,7 @@ open class Data {
     open fun addInvoiceToTable(fullName:String, content: MutableList<MutableList<String>>, userCompanyName: String,
                                userAddLine1: String, userPhnNumber: String,
                                numFax: String, dateDue: String, buyerName: String, buyerCompanyName: String, buyerCompanyAdd: String,
-                               buyerCompPhnNum: String): String{
+                               buyerCompPhnNum: String, cgst: String, igst: String): String{
         val sdf = SimpleDateFormat("dd/M/yyyy HH:mm:ss")
         val currentDate = sdf.format(Date()).toString()
         val name: String = "$currentDate $buyerName"
@@ -233,6 +232,8 @@ open class Data {
                 it[companyName] = buyerCompanyName
                 it[compAdd] = buyerCompanyAdd
                 it[compPhnNum] = buyerCompPhnNum
+                it[cgstPercentage] = cgst
+                it[igstPercentage] = igst
                 if (recordsCount == 0L){
                     it[custExists] = "false"
                     it[custId] = 1
@@ -277,5 +278,45 @@ open class Data {
             allItems = StockTable.selectAll()
         }
         return allItems
+    }
+
+    fun searchInvoiceTable(buyerFullName: String): MutableList<MutableList<String>>{
+        var finalList: MutableList<MutableList<String>> = mutableListOf()
+        transaction {
+            InvoiceTable.select{
+                InvoiceTable.custFullName eq buyerFullName
+            }.forEach{
+                finalList.add(mutableListOf(it[InvoiceTable.id].toString(), it[InvoiceTable.custFullName],
+                    it[InvoiceTable.date], it[InvoiceTable.tableContent]))
+            }
+        }
+        return finalList
+    }
+
+    fun retrieveInvoiceData(index: Int): MutableMap<String, String>{
+        var dataMap: MutableMap<String, String> = mutableMapOf()
+        transaction{
+            InvoiceTable.select{
+                InvoiceTable.id eq index
+            }.forEach{
+                dataMap["custFullName"] = it[InvoiceTable.custFullName]
+                dataMap["invoiceName"] = it[InvoiceTable.invoiceName]
+                dataMap["tableContent"] = it[InvoiceTable.tableContent]
+                dataMap["yourCompanyName"] = it[InvoiceTable.yourCompanyName]
+                dataMap["addLine1"] = it[InvoiceTable.addLine1]
+                dataMap["date"] = it[InvoiceTable.date]
+                dataMap["invoiceNumber"] = it[InvoiceTable.invoiceNumber].toString()
+                dataMap["phnNumber"] = it[InvoiceTable.phnNumber]
+                dataMap["custId"] = it[InvoiceTable.custId].toString()
+                dataMap["faxNum"] = it[InvoiceTable.faxNum]
+                dataMap["billToName"] = it[InvoiceTable.billToName]
+                dataMap["companyName"] = it[InvoiceTable.companyName]
+                dataMap["compAdd"] = it[InvoiceTable.compAdd]
+                dataMap["compPhnNum"] = it[InvoiceTable.compPhnNum]
+                dataMap["cgstPercentage"] = it[InvoiceTable.cgstPercentage]
+                dataMap["igstPercentage"] = it[InvoiceTable.igstPercentage]
+            }
+        }
+        return dataMap
     }
 }
