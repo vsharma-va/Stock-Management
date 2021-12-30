@@ -8,11 +8,11 @@ import java.util.*
 
 
 //TODO -
-// Working Customer Id and Invoice Id
-// Recover a deleted bill
+// Working Customer Id and Invoice Id (DONE)
+// Recover a deleted bill (DONE)
 // Take values of some repeated fields from previous bills such as company name
 
-//TODO (Recover a deleted bill)-
+//TODO (Recover a deleted bill) (DONE)-
 // Make an invoice table which will contain all the data for the bill so that the bill if deleted can be recovered (Done)
 // LOGIC FOR CUSTOMER ID (Done)-
 //      If its the first entry just give it the customer id of 1 and add another column of custExists and give it the value false
@@ -207,8 +207,10 @@ open class Data {
     open fun addInvoiceToTable(fullName:String, content: MutableList<MutableList<String>>, userCompanyName: String,
                                userAddLine1: String, userPhnNumber: String,
                                numFax: String, dateDue: String, buyerName: String, buyerCompanyName: String, buyerCompanyAdd: String,
-                               buyerCompPhnNum: String, cgst: String, igst: String): String{
+                               buyerCompPhnNum: String, cgst: String, igst: String): MutableList<String> {
         val sdf = SimpleDateFormat("dd/M/yyyy HH:mm:ss")
+        var customerIdToReturn: Int = 0
+        var invoiceIdToReturn: Int = 0
         val currentDate = sdf.format(Date()).toString()
         val name: String = "$currentDate $buyerName"
         val replacedName: String = name.replace("""/""", ".").replace(":", ",")
@@ -237,6 +239,8 @@ open class Data {
                 if (recordsCount == 0L){
                     it[custExists] = "false"
                     it[custId] = 1
+                    customerIdToReturn = 1
+                    invoiceIdToReturn = 1
                 }
                 else{
                     InvoiceTable.select{
@@ -251,10 +255,12 @@ open class Data {
                             InvoiceTable.custExists eq "false"
                         }.forEach{
                             x.add(it[custId])
+                            invoiceIdToReturn = it[id]
                         }
 
                         val lastCustomerId: Int = x.last()
                         it[custId] = lastCustomerId + 1
+                        customerIdToReturn = lastCustomerId + 1
                         it[custExists] = "false"
                     }
                     else{
@@ -262,14 +268,16 @@ open class Data {
                             InvoiceTable.custFullName eq fullName
                         }.forEach{
                             existingCustId = it[custId]
+                            invoiceIdToReturn = it[id]
                         }
                         it[custId] = existingCustId
+                        customerIdToReturn = existingCustId
                         it[custExists] = "true"
                     }
                 }
             }
         }
-        return replacedName
+        return mutableListOf(replacedName, customerIdToReturn.toString(), invoiceIdToReturn.toString())
     }
 
     fun retrieveAllRecords(): Query {
@@ -318,5 +326,13 @@ open class Data {
             }
         }
         return dataMap
+    }
+
+    fun lengthOfInvoiceTable(): Long{
+        var length: Long = 0
+        transaction{
+            length = InvoiceTable.select(InvoiceTable.id greater 0).count()
+        }
+        return length
     }
 }

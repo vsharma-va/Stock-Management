@@ -31,17 +31,56 @@ class UserControl(private val data: Data, private val document: Document){
                 println("Found: $foundValue")
             }
             else if(userChoice == 4){
-                var billItem: MutableList<MutableList<String>> = collectBillData()
+                val billItem: MutableList<MutableList<String>> = collectBillData()
+                var templateData: MutableList<String> = mutableListOf()
+                val buyersFullName: String
+                val invoiceReturnData: MutableList<String>
+                var bool: Boolean = false
                 if (billItem.isNotEmpty()){
-                    val templateData: MutableList<String> = getDataForDocumentTemplate()
-                    println("Enter the full name of the buyer")
-                    val buyersFullName: String = readLine().toString()
-                    val fileName: String = data.addInvoiceToTable(buyersFullName, billItem, templateData[0], templateData[1], templateData[4],
-                     templateData[6], templateData[7], templateData[8], templateData[9], templateData[10], templateData[11],
-                     templateData[12], templateData[13])
-                    val bool: Boolean = document.generateTemplate(templateData[0], templateData[1], templateData[2], templateData[3].toInt(),
-                        templateData[4], templateData[5], templateData[6], templateData[7], templateData[8], templateData[9],
-                        templateData[10], templateData[11], fileName)
+                    val lengthInvoice: Long = data.lengthOfInvoiceTable()
+                    if (lengthInvoice > 0){
+                        println("Would you like to take the value of your company name, phone number, fax number, address from" +
+                                " the previous invoice" +
+                                " \nEnter 1 to confirm" +
+                                " \nEnter 2 to reject ")
+                        val userInputChoice: String = readLine().toString()
+                        if (userInputChoice == "1"){
+                            val dataMap: MutableMap<String, String> = data.retrieveInvoiceData(lengthInvoice.toInt())
+                            templateData = getDataForDocumentTemplate(true)
+                            println("Enter the full name of the buyer")
+                            buyersFullName = readLine().toString()
+                            invoiceReturnData = data.addInvoiceToTable(buyersFullName, billItem, dataMap["yourCompanyName"].toString()
+                                , dataMap["addLine1"].toString(), dataMap["phnNumber"].toString(),
+                                dataMap["faxNum"].toString(), templateData[7], templateData[8], templateData[9], templateData[10], templateData[11],
+                                templateData[12], templateData[13])
+                            bool = document.generateTemplate(dataMap["yourCompanyName"].toString(), dataMap["addLine1"].toString()
+                                , templateData[2], invoiceReturnData[2].toInt(),
+                                dataMap["phnNumber"].toString(), invoiceReturnData[1], dataMap["faxNum"].toString(), templateData[7], templateData[8], templateData[9],
+                                templateData[10], templateData[11], invoiceReturnData[0])
+                        }
+                        else if(userInputChoice == "2"){
+                            templateData = getDataForDocumentTemplate(false)
+                            println("Enter the full name of the buyer")
+                            buyersFullName = readLine().toString()
+                            invoiceReturnData = data.addInvoiceToTable(buyersFullName, billItem, templateData[0], templateData[1], templateData[4],
+                                templateData[6], templateData[7], templateData[8], templateData[9], templateData[10], templateData[11],
+                                templateData[12], templateData[13])
+                            bool = document.generateTemplate(templateData[0], templateData[1], templateData[2], invoiceReturnData[2].toInt(),
+                                templateData[4], invoiceReturnData[1], templateData[6], templateData[7], templateData[8], templateData[9],
+                                templateData[10], templateData[11], invoiceReturnData[0])
+                        }
+                    }
+                    else{
+                        templateData = getDataForDocumentTemplate(false)
+                        println("Enter the full name of the buyer")
+                        buyersFullName = readLine().toString()
+                        invoiceReturnData = data.addInvoiceToTable(buyersFullName, billItem, templateData[0], templateData[1], templateData[4],
+                            templateData[6], templateData[7], templateData[8], templateData[9], templateData[10], templateData[11],
+                            templateData[12], templateData[13])
+                        bool = document.generateTemplate(templateData[0], templateData[1], templateData[2], invoiceReturnData[2].toInt(),
+                            templateData[4], invoiceReturnData[1], templateData[6], templateData[7], templateData[8], templateData[9],
+                            templateData[10], templateData[11], invoiceReturnData[0])
+                    }
                     if (bool){
                         document.generateTable(billItem, templateData[12].toFloat(), templateData[13].toFloat())
                         document.writeToPdf()
@@ -66,7 +105,7 @@ class UserControl(private val data: Data, private val document: Document){
         do{
             println("Enter -1 to exit")
             print("Enter Name Of The Stock: ")
-            var userInputName: String = readLine().toString()
+            val userInputName: String = readLine().toString()
             if (userInputName == "-1") {
                 break
             }
@@ -129,10 +168,10 @@ class UserControl(private val data: Data, private val document: Document){
     }
 
     private fun collectBillData(): MutableList<MutableList<String>>{
-        var billItems: MutableList<MutableList<String>> = mutableListOf()
+        val billItems: MutableList<MutableList<String>> = mutableListOf()
         var groupedItems: MutableList<String>
         var dataForBillItems: MutableList<String>
-        var packedForBillItems: MutableList<MutableList<String>> = mutableListOf()
+        val packedForBillItems: MutableList<MutableList<String>> = mutableListOf()
         var userInput: String
         var cont: Boolean = true
         val allItems: Query = data.retrieveAllRecords()
@@ -216,51 +255,93 @@ class UserControl(private val data: Data, private val document: Document){
         return packedForBillItems
     }
 
-    private fun getDataForDocumentTemplate(): MutableList<String>{
-        var returnArray: MutableList<String> = mutableListOf()
+    private fun getDataForDocumentTemplate(auto: Boolean): MutableList<String>{
+        val returnArray: MutableList<String> = mutableListOf()
+        val currentDate: String
+        val dueDate: String
+        var compName: String = ""
+        var addLine1: String = ""
+        var invoiceNumber: Int = 0
+        var phnNumber: String = ""
+        var custId: String = "0"
+        var faxNum: String = ""
+        val billToName: String
+        val companyName: String
+        val companyAdd: String
+        val compPhnNum: String
+        val cgstPercentage: String
+        val igstPercentage: String
 
-        print("Enter Your Company's name: ")
-        val compName: String = readLine().toString()
 
-        print("Enter Your Company's Address Line 1: ")
-        val addLine1: String = readLine().toString()
+        if (auto){
+            val sdf = SimpleDateFormat("dd/M/yyyy")
+            currentDate = sdf.format(Date()).toString()
 
-        val sdf = SimpleDateFormat("dd/M/yyyy")
-        val currentDate = sdf.format(Date()).toString()
+            print("Enter Due Date: (dd/mm/yyyy) ")
+            dueDate = readLine().toString()
 
-        // create database to store all the invoices
-        // take its index as the invoice number
-        val invoiceNumber: Int = 1
+            print("Enter the buyers name: ")
+            billToName = readLine().toString()
 
-        print("Enter Your Company's Phone Number: ")
-        val phnNumber: String = readLine().toString()
+            print("Enter the buyers company name: (Press enter to leave it empty) ")
+            companyName = readLine().toString()
 
-        print("Enter Customer ID: ")
-        val custId: String = readLine().toString()
+            print("Enter the buyers/ company's address: ")
+            companyAdd = readLine().toString()
 
-        print("Enter Fax Number: (press enter to leave it empty)")
-        val faxNum: String = readLine().toString()
+            print("Enter buyers/ company's phone number: ")
+            compPhnNum = readLine().toString()
 
-        print("Enter Due Date: (dd/mm/yyyy) ")
-        val dueDate: String = readLine().toString()
+            print("Enter CGST %: ")
+            cgstPercentage = readLine().toString()
 
-        print("Enter the buyers name: ")
-        val billToName: String = readLine().toString()
+            print("Enter IGST %: ")
+            igstPercentage = readLine().toString()
+        }
+        else{
+            print("Enter Your Company's name: ")
+            compName = readLine().toString()
 
-        print("Enter the buyers company name: (Press enter to leave it empty) ")
-        val companyName: String = readLine().toString()
+            print("Enter Your Company's Address Line 1: ")
+            addLine1 = readLine().toString()
 
-        print("Enter the buyers/ company's address: ")
-        val companyAdd: String = readLine().toString()
+            val sdf = SimpleDateFormat("dd/M/yyyy")
+            currentDate = sdf.format(Date()).toString()
 
-        print("Enter buyers/ company's phone number: ")
-        val compPhnNum: String = readLine().toString()
+            // create database to store all the invoices
+            // take its index as the invoice number
+            invoiceNumber = 1
 
-        print("Enter CGST %: ")
-        val cgstPercentage: String = readLine().toString()
+            print("Enter Your Company's Phone Number: ")
+            phnNumber = readLine().toString()
 
-        print("Enter IGST %: ")
-        val igstPercentage: String = readLine().toString()
+            custId = "0"
+
+            print("Enter Fax Number: (press enter to leave it empty)")
+            faxNum = readLine().toString()
+
+            print("Enter Due Date: (dd/mm/yyyy) ")
+            dueDate = readLine().toString()
+
+            print("Enter the buyers name: ")
+            billToName = readLine().toString()
+
+            print("Enter the buyers company name: (Press enter to leave it empty) ")
+            companyName = readLine().toString()
+
+            print("Enter the buyers/ company's address: ")
+            companyAdd = readLine().toString()
+
+            print("Enter buyers/ company's phone number: ")
+            compPhnNum = readLine().toString()
+
+            print("Enter CGST %: ")
+            cgstPercentage = readLine().toString()
+
+            print("Enter IGST %: ")
+            igstPercentage = readLine().toString()
+        }
+
 
         returnArray.add(compName)
         returnArray.add(addLine1)
