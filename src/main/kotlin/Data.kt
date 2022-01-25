@@ -218,7 +218,10 @@ open class Data {
 
         transaction{
             val recordsCount: Long = InvoiceTable.select(InvoiceTable.id greater 0).count()
+            println(recordsCount)
             var existingCustId: Int = 0
+            var sameCustomer: Boolean = true
+            var lastCustomerId: Int = 0
             InvoiceTable.insert{ it ->
                 it[custFullName] = fullName
                 it[invoiceName] = replacedName
@@ -226,7 +229,7 @@ open class Data {
                 it[yourCompanyName] = userCompanyName
                 it[addLine1] = userAddLine1
                 it[date] = currentDate
-                it[invoiceNumber] = recordsCount.toInt()
+                it[invoiceNumber] = recordsCount.toInt() + 1
                 it[phnNumber] = userPhnNumber
                 it[faxNum] = numFax
                 it[dueDate] = dateDue
@@ -249,30 +252,46 @@ open class Data {
                         counter++
                     }
 
-                    if (counter == 0){
-                        val x: MutableList<Int> = mutableListOf()
-                        InvoiceTable.select{
-                            InvoiceTable.custExists eq "false"
-                        }.forEach{
-                            x.add(it[custId])
-                            invoiceIdToReturn = it[id]
-                        }
+                    val x: MutableList<Int> = mutableListOf()
+                    InvoiceTable.select{
+                        InvoiceTable.custExists eq "false"
+                    }.forEach{
+                        x.add(it[custId])
+                        invoiceIdToReturn = it[id]
+                    }
+                    lastCustomerId = x.last()
 
-                        val lastCustomerId: Int = x.last()
+                    if (counter == 0){
                         it[custId] = lastCustomerId + 1
                         customerIdToReturn = lastCustomerId + 1
                         it[custExists] = "false"
+                        sameCustomer = false
                     }
-                    else{
+                    else if((sameCustomer) and (counter != 0)){
+                        var indexCounter: Int = 0
+                        val userChoice: String
                         InvoiceTable.select{
                             InvoiceTable.custFullName eq fullName
                         }.forEach{
+                            println("Customers with the same name - ")
+                            println("${indexCounter}. ${it[custFullName]} ${it[custId]} ${it[compAdd]}")
                             existingCustId = it[custId]
                             invoiceIdToReturn = it[id]
+                            indexCounter ++
                         }
-                        it[custId] = existingCustId
-                        customerIdToReturn = existingCustId
-                        it[custExists] = "true"
+                        println("Enter the index number of the line which contains the customer whose bill you are creating" +
+                                "Or enter -1 to indicate that it is a new customer: ")
+                        userChoice = readLine().toString()
+                        if (userChoice == "-1"){
+                            it[custId] = lastCustomerId + 1
+                            it[custExists] = "false"
+                            customerIdToReturn = lastCustomerId + 1
+                        }
+                        else {
+                            it[custId] = existingCustId
+                            customerIdToReturn = existingCustId
+                            it[custExists] = "true"
+                        }
                     }
                 }
             }
