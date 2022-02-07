@@ -29,7 +29,8 @@ class Document(private val data: Data) {
     fun generateTemplate(yourCompanyName: String, addLine1: String, date: String, invoiceNumber: Int, phnNumber: String, custId: String,
                         faxNum: String, dueDate: String, billToName: String, companyName: String, compAdd: String,
                         compPhnNum: String, fileName: String): Boolean{
-        pdf = PdfDocument(PdfWriter("""F:\\IDEs\\Kotlin\\Stock-Management\\src\\data\\pdf\\(${fileName}).pdf"""))
+        // replace src with ${System.getProperty("user.dir")} when creating .jar
+        pdf = PdfDocument(PdfWriter("${System.getProperty("user.dir")}/data/pdf/(${fileName}).pdf"))
         document = Document(pdf)
         companyNameAndInvoice = Paragraph(yourCompanyName).setFontSize(20f).setTextAlignment(TextAlignment.LEFT).setBackgroundColor(
             ColorConstants.LIGHT_GRAY)

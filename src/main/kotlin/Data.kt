@@ -60,7 +60,8 @@ open class Data {
     }
 
     init{
-        Database.connect("jdbc:sqlite:F:\\IDEs\\Kotlin\\Stock-Management\\src\\data\\data.db", "org.sqlite.JDBC")
+        // replace src with ${System.getProperty("user.dir")} when creating .jar
+        Database.connect("jdbc:sqlite:src/data/data.db", "org.sqlite.JDBC")
         TransactionManager.manager.defaultIsolationLevel =
             Connection.TRANSACTION_SERIALIZABLE
         transaction {
@@ -218,7 +219,6 @@ open class Data {
 
         transaction{
             val recordsCount: Long = InvoiceTable.select(InvoiceTable.id greater 0).count()
-            println(recordsCount)
             var existingCustId: Int = 0
             var sameCustomer: Boolean = true
             var lastCustomerId: Int = 0
