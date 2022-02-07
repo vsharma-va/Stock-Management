@@ -5,6 +5,11 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.sql.Connection
 import java.text.SimpleDateFormat
 import java.util.*
+import com.github.ajalt.mordant.rendering.TextColors.*
+import com.github.ajalt.mordant.rendering.TextStyles.*
+import com.github.ajalt.mordant.table.row
+import com.github.ajalt.mordant.table.table
+import com.github.ajalt.mordant.terminal.Terminal
 
 
 //TODO -
@@ -26,6 +31,7 @@ import java.util.*
 
 
 open class Data {
+    private val terminal = Terminal()
     object StockTable: Table(){
         val id: Column<Int> = integer("id").autoIncrement()
         val stockName: Column<String> = varchar("stockName", 244)
@@ -61,7 +67,7 @@ open class Data {
 
     init{
         // replace src with ${System.getProperty("user.dir")} when creating .jar
-        Database.connect("jdbc:sqlite:src/data/data.db", "org.sqlite.JDBC")
+        Database.connect("jdbc:sqlite:src/main/kotlin/data/data.db", "org.sqlite.JDBC")
         TransactionManager.manager.defaultIsolationLevel =
             Connection.TRANSACTION_SERIALIZABLE
         transaction {
@@ -160,7 +166,7 @@ open class Data {
         transaction {
             val rows = StockTable.select{StockTable.id greater 0}.count()
             if (rows == 0L){
-                println("The database is empty")
+                terminal.println((red on gray)("The database is empty"))
                 empty = true
             }
         }
@@ -173,7 +179,7 @@ open class Data {
         var groupItem: MutableList<String> = mutableListOf()
 
         if (map.isEmpty()){
-            println("Stock doesn't exist")
+            terminal.println((red on gray)("Stock doesn't exist"))
             found = false
         }
 
@@ -186,7 +192,7 @@ open class Data {
                         intAntAmount = antAmount
                     }
                     if(amount > intAntAmount){
-                        println("Not enough stock")
+                        terminal.println((red on gray)("Not enough stock"))
                     }
                     else{
                         val newAmount: Int = intAntAmount - amount
@@ -273,13 +279,17 @@ open class Data {
                         InvoiceTable.select{
                             InvoiceTable.custFullName eq fullName
                         }.forEach{
-                            println("Customers with the same name - ")
-                            println("${indexCounter}. ${it[custFullName]} ${it[custId]} ${it[compAdd]}")
+                            terminal.println("Customers with the same ${(red on gray)("NAME")} - ")
+                            terminal.println(table{
+                                header{row("Index Number", "Customer Name", "Customer Id", "Company Address")}
+                                body{row("$indexCounter", it[custFullName], "${it[custId]}", it[compAdd])}
+                            })
                             existingCustId = it[custId]
                             invoiceIdToReturn = it[id]
                             indexCounter ++
                         }
-                        println("Enter the index number of the line which contains the customer whose bill you are creating" +
+                        println("Enter the index number of the line ${(red on gray)("The number at the start of the line")}" +
+                                "which contains the customer whose bill you are creating" +
                                 "Or enter -1 to indicate that it is a new customer: ")
                         userChoice = readLine().toString()
                         if (userChoice == "-1"){

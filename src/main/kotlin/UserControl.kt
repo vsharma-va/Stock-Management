@@ -1,21 +1,40 @@
+import com.github.ajalt.mordant.markdown.Markdown
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.NumberFormatException
+import com.github.ajalt.mordant.rendering.TextColors.*
+import com.github.ajalt.mordant.rendering.TextStyles.*
+import com.github.ajalt.mordant.table.row
+import com.github.ajalt.mordant.table.table
+import com.github.ajalt.mordant.terminal.Terminal
+import java.io.File
 
 class UserControl(private val data: Data, private val document: Document){
+    val terminal = Terminal()
     fun whatToDo()
     {
         if(data.getStatus()){
+            val terminal = Terminal()
+            val path = "src/main/kotlin/data/md/first_time.md"
+            val markdown = File(path).readText()
+            val widget = Markdown(markdown)
+            terminal.println(widget)
             addRecords()
         }
         else{
-            println("Press 1 to Add Records to database")
-            println("Press 2 to retrieve stock name w.r.t stock name or index number")
-            println("Press 3 to retrieve stock amount w.r.t to index number")
-            println("Press 4 to create a bill")
-            println("Press 5 to recover a deleted bill")
+            val terminal = Terminal()
+            val path = "src/main/kotlin/data/md/rest.md"
+            val markdown = File(path).readText()
+            val widget = Markdown(markdown)
+            terminal.println(widget)
+            println()
+            terminal.println("${(green on gray)("Press 1")} to Add Records to database")
+            println("${(green on gray)("Press 2")} to retrieve stock name w.r.t stock name or index number")
+            println("${(green on gray)("Press 3")} to retrieve stock amount w.r.t index number")
+            println("${(green on gray)("Press 4")} to create a bill")
+            println("${(green on gray)("Press 5")} to recover a deleted bill")
             val userChoice: Int = Integer.valueOf(readLine())
             if (userChoice == 1){
                 addRecords()
@@ -23,12 +42,13 @@ class UserControl(private val data: Data, private val document: Document){
             else if(userChoice == 2){
                 val nameAmountMap: MutableMap<String, Int> = retrieveStockAmount()
                 println("Found: ")
-                println(nameAmountMap)
+                terminal.println((green on black)("$nameAmountMap"))
             }
             else if(userChoice == 3){
                 val userInputIndex: Int = Integer.valueOf(readLine())
                 val foundValue: String = data.retrieveStockName(userInputIndex)
-                println("Found: $foundValue")
+                println("Found: ")
+                terminal.println((green on black)("$foundValue"))
             }
             else if(userChoice == 4){
                 val billItem: MutableList<MutableList<String>> = collectBillData()
@@ -41,8 +61,8 @@ class UserControl(private val data: Data, private val document: Document){
                     if (lengthInvoice > 0){
                         println("Would you like to take the value of your company name, phone number, fax number, address from" +
                                 " the previous invoice" +
-                                " \nEnter 1 to confirm" +
-                                " \nEnter 2 to reject ")
+                                " \n${(green on gray)("Enter 1")} to confirm" +
+                                " \n${(green on gray)("Enter 2")} to reject ")
                         val userInputChoice: String = readLine().toString()
                         if (userInputChoice == "1"){
                             val dataMap: MutableMap<String, String> = data.retrieveInvoiceData(lengthInvoice.toInt())
@@ -86,11 +106,11 @@ class UserControl(private val data: Data, private val document: Document){
                         document.writeToPdf()
                     }
                     else{
-                        println("Exiting.. (Error in generating template for the pdf)")
+                        terminal.println((red on gray)("Exiting.. (Error in generating template for the pdf)"))
                     }
                 }
                 else{
-                    println("Exiting.. (The bill item list[list] is empty)")
+                    terminal.println((red on gray)("Exiting.. (The bill item list[list] is empty)"))
                 }
             }
             else if(userChoice == 5){
@@ -103,14 +123,14 @@ class UserControl(private val data: Data, private val document: Document){
         var correct: Boolean = true
         var userInputPrice:Double?
         do{
-            println("Enter -1 to exit")
+            terminal.println((red on gray)("Enter -1 to exit"))
             print("Enter Name Of The Stock: ")
             val userInputName: String = readLine().toString()
             if (userInputName == "-1") {
                 break
             }
             if (userInputName.isEmpty()){
-                println("Name cannot be left empty")
+                terminal.println((red on gray)("Name cannot be left empty"))
                 correct = false
                 break
             }
@@ -122,14 +142,14 @@ class UserControl(private val data: Data, private val document: Document){
                     break
                 }
             }catch(e: NumberFormatException){
-                println("Please enter an integer")
+                terminal.println((red on gray)("Please enter an integer"))
                 correct = false
             }
 
             do {
                 print("Enter the price : ")
                 userInputPrice = readLine()!!.toDoubleOrNull()
-                if (userInputPrice == null) println("Not a valid number, try again")
+                if (userInputPrice == null) terminal.println((red on gray)("Not a valid number, try again"))
             }
             while (userInputPrice == null)
 
@@ -138,7 +158,7 @@ class UserControl(private val data: Data, private val document: Document){
                 data.addRecords(userInputName, userInputAmount, userInputPriceDouble)
             }
             else{
-                println("Exiting.. (Incorrect input given in either the name or the amount)")
+                terminal.println((red on gray)("Exiting.. (Incorrect input given in either the name or the amount)"))
                 break
             }
 
@@ -193,7 +213,7 @@ class UserControl(private val data: Data, private val document: Document){
             do{
                 var map: MutableMap<String, Int>
 
-                println("Enter -1 to exit anytime")
+                terminal.println((red on gray)("Enter -1 to exit anytime"))
                 print("Enter the name or the index of the stock: ")
                 userInput = readLine().toString()
 
@@ -203,13 +223,13 @@ class UserControl(private val data: Data, private val document: Document){
                 }
 
                 map = data.retrieveStockAmount(name=userInput)
-                println("Found: $map")
+                println("Found: ${(green on black)("$map")}")
 
                 if (map.isNotEmpty()){
                     break
                 }
                 else{
-                    println("No record found try again")
+                    terminal.println((red)("No record found try again"))
                 }
             } while(true)
 
@@ -238,12 +258,12 @@ class UserControl(private val data: Data, private val document: Document){
         println("\n")
         println("Selected Items: ")
         for (i in billItems){
-            println("Name- ${i[1]}, amount- ${i[0]}")
+            terminal.println((green on black)("Name- ${i[1]}, amount- ${i[0]}"))
         }
 
         println("\n")
-        println("Are you sure you want to proceed ? Changes will be made to the database and will have to be reverted manually")
-        print("1 for continue\n2 to discard: ")
+        println("Are you sure you want to proceed ? ${(red on gray)("Changes will be made to the database and will have to be reverted manually")}")
+        print("${(green on gray)("Enter 1")} to continue\n${(green on gray)("Enter 2")} to discard: ")
         val userDecision: String = readLine().toString()
 
         if (userDecision == "1"){
@@ -389,7 +409,7 @@ class UserControl(private val data: Data, private val document: Document){
             }
             else {
                 nextStep = false
-                println("No Invoices Found Try Again or Enter -1 to exit")
+                terminal.println((red on gray)("No Invoices Found Try Again or Enter -1 to exit"))
             }
         }while(true)
 
@@ -421,8 +441,8 @@ class UserControl(private val data: Data, private val document: Document){
                 document.generateTable(answer, dataMap["cgstPercentage"]!!.toFloat(), dataMap["igstPercentage"]!!.toFloat())
                 document.writeToPdf()
             }catch(e: NumberFormatException){
-                println("Please enter an integer only")
-                println("Exiting..")
+                terminal.println((red on gray)("Please enter an integer only"))
+                terminal.println((red on gray)("Exiting.."))
             }
         }
     }

@@ -30,7 +30,7 @@ class Document(private val data: Data) {
                         faxNum: String, dueDate: String, billToName: String, companyName: String, compAdd: String,
                         compPhnNum: String, fileName: String): Boolean{
         // replace src with ${System.getProperty("user.dir")} when creating .jar
-        pdf = PdfDocument(PdfWriter("${System.getProperty("user.dir")}/data/pdf/(${fileName}).pdf"))
+        pdf = PdfDocument(PdfWriter("src/main/kotlin/data/pdf/(${fileName}).pdf"))
         document = Document(pdf)
         companyNameAndInvoice = Paragraph(yourCompanyName).setFontSize(20f).setTextAlignment(TextAlignment.LEFT).setBackgroundColor(
             ColorConstants.LIGHT_GRAY)
